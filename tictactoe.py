@@ -2,11 +2,12 @@ import random, copy
 
 # Player -1 is o, +1 is x
 class Game:
-	def __init__(self):
-		self.board = [[0 for i in range(9)] for j in range(9)]
-		self.miniWins = [[0 for i in range(3)] for j in range(3)]
+	def __init__(self, dim=3):
+		self.dim = dim
+		self.board = [[0 for i in range(self.dim*self.dim)] for j in range(self.dim*self.dim)]
+		self.miniWins = [[0 for i in range(self.dim)] for j in range(self.dim)]
 		self.currPlayer = -1 + 2*random.randint(0,1)
-		self.validMoves = [(x,y) for x in range(9) for y in range(9)]
+		self.validMoves = [(x,y) for x in range(self.dim*self.dim) for y in range(self.dim*self.dim)]
 		self.winner = 0
 
 	def getMoves(self):
@@ -33,7 +34,7 @@ class Game:
 		return newGame
 
 	# Option = 1: 9x9 board
-	# Option = 2: 3x3 board of mini wins
+	# Option = 2: self.dimxself.dim board of mini wins
 	def printBoard(self, option=1):
 		board = self.board if option == 1 else self.miniWins
 		for i in range(len(board)):
@@ -47,8 +48,11 @@ class Game:
 				else:
 					strrow.append('_')
 			strrow = ' '.join(strrow)
-			print strrow[:6] + ' ' + strrow[6:12] + ' ' + strrow[12:]
-			if i % 3 == 2:
+			strrow2 = ''
+			for j in range(self.dim):
+				strrow2 = strrow2 + strrow[2*self.dim*j : 2*self.dim*(j+1)] + ' '
+			print strrow2
+			if (i + 1) % self.dim == 0:
 				print
 
 	def move(self,pos):
@@ -67,52 +71,79 @@ class Game:
 
 	def updateValidMoves(self,pos):
 		self.validMoves = []
-		r0 = pos[0] % 3
-		c0 = pos[1] % 3
-		for dr in range(3):
-			for dc in range(3):
-				r = 3*r0 + dr
-				c = 3*c0 + dc
+		r0 = pos[0] % self.dim
+		c0 = pos[1] % self.dim
+		for dr in range(self.dim):
+			for dc in range(self.dim):
+				r = self.dim*r0 + dr
+				c = self.dim*c0 + dc
 				if self.board[r][c] == 0:
 					self.validMoves.append((r,c))
 
 	# Updates the grid specifying which mini-boards have been won by which players
 	def updateMiniWinners(self,pos):
-		r0 = pos[0]/3
-		c0 = pos[1]/3
+		r0 = pos[0]/self.dim
+		c0 = pos[1]/self.dim
 		if self.miniWins[r0][c0] == 0:
-			for dr in range(3):
-				if self.board[3*r0 + dr][3*c0] != 0:
-					if self.board[3*r0 + dr][3*c0] == self.board[3*r0 + dr][3*c0 + 1] and self.board[3*r0 + dr][3*c0] == self.board[3*r0 + dr][3*c0 + 2]:
+			for dr in range(self.dim):
+				if self.board[self.dim*r0 + dr][self.dim*c0] != 0:
+					success = True
+					for dc in range(self.dim):
+						success = success and self.board[self.dim*r0 + dr][self.dim*c0] == self.board[self.dim*r0 + dr][self.dim*c0 + dc]
+					if success:
 						self.miniWins[r0][c0] = self.currPlayer
 						return
-			for dc in range(3):
-				if self.board[3*r0][3*c0 + dc] != 0:
-					if self.board[3*r0][3*c0 + dc] == self.board[3*r0 + 1][3*c0 + dc] and self.board[3*r0][3*c0 + dc] == self.board[3*r0 + 2][3*c0 + dc]:
+			for dc in range(self.dim):
+				if self.board[self.dim*r0][self.dim*c0 + dc] != 0:
+					success = True
+					for dr in range(self.dim):
+						success = success and self.board[self.dim*r0][self.dim*c0 + dc] == self.board[self.dim*r0 + dr][self.dim*c0 + dc]
+					if success:
 						self.miniWins[r0][c0] = self.currPlayer
 						return
-			if self.board[3*r0][3*c0] != 0:
-				if self.board[3*r0][3*c0] == self.board[3*r0 + 1][3*c0 + 1] and self.board[3*r0][3*c0] == self.board[3*r0 + 2][3*c0 + 2]:
+			if self.board[self.dim*r0][self.dim*c0] != 0:
+				success = True
+				for drdc in range(self.dim):
+					success = success and self.board[self.dim*r0][self.dim*c0] == self.board[self.dim*r0 + drdc][self.dim*c0 + drdc]
+				if success:
 					self.miniWins[r0][c0] = self.currPlayer
 					return
-			if self.board[3*r0 + 2][3*c0] != 0:
-				if self.board[3*r0 + 2][3*c0] == self.board[3*r0 + 1][3*c0 + 1] and self.board[3*r0 + 2][3*c0] == self.board[3*r0][3*c0 + 2]:
+			if self.board[self.dim*(r0 + 1) - 1][self.dim*c0] != 0:
+				success = True
+				for dc in range(1, self.dim):
+					success = success and self.board[self.dim*(r0 + 1) - 1][self.dim*c0] == self.board[self.dim*(r0 + 1) - 1 - dc][self.dim*c0 + dc]
+				if success:
 					self.miniWins[r0][c0] = self.currPlayer
 					return
 
 	def updateWinner(self):
 		if self.winner == 0:
-			for r in [0, 1, 2]:
-				if self.miniWins[r][0] != 0 and self.miniWins[r][0] == self.miniWins[r][1] and self.miniWins[r][0] == self.miniWins[r][2]:
+			for r in range(self.dim):
+				success = self.miniWins[r][0] != 0
+				for c in range(1, self.dim):
+					success = success and self.miniWins[r][0] == self.miniWins[r][c]
+				if success:
 					self.winner = self.miniWins[r][0]
 					return
-			for c in [0, 1, 2]:
-				if self.miniWins[0][c] != 0 and self.miniWins[0][c] == self.miniWins[1][c] and self.miniWins[0][c] == self.miniWins[2][c]:
+
+			for c in range(self.dim):
+				success = self.miniWins[0][c] != 0
+				for r in range(1, self.dim):
+					success = success and self.miniWins[0][c] == self.miniWins[r][c]
+				if success:
 					self.winner = self.miniWins[0][c]
 					return
-			if self.miniWins[0][0] != 0 and self.miniWins[0][0] == self.miniWins[1][1] and self.miniWins[0][0] == self.miniWins[2][2]:
+
+			success = self.miniWins[0][0] != 0
+			for rc in range(1, self.dim):
+				success = success and self.miniWins[0][0] == self.miniWins[rc][rc]
+			if success:
 				self.winner = self.miniWins[0][0]
 				return
-			if self.miniWins[2][0] != 0 and self.miniWins[2][0] == self.miniWins[1][1] and self.miniWins[2][0] == self.miniWins[0][2]:
-				self.winner = self.miniWins[2][0]
+
+			success = self.miniWins[self.dim - 1][0] != 0
+			for c in range(1, self.dim):
+				success = success and self.miniWins[self.dim - 1][0] == self.miniWins[self.dim - 1 - c][c]
+			if success:
+				self.winner = self.miniWins[self.dim - 1][0]
 
