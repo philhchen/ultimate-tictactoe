@@ -56,12 +56,7 @@ class Game:
 				print
 
 	def move(self,pos):
-		isValid = False
-		for move in self.validMoves:
-			if move == pos:
-				isValid = True
-				break
-		if not isValid:
+		if not pos in self.validMoves:
 			raise Exception("Invalid Move")
 		self.board[pos[0]][pos[1]] = self.currPlayer
 		self.updateMiniWinners(pos)
