@@ -1,11 +1,12 @@
 import random, copy
+import numpy as np
 
 # Player -1 is o, +1 is x
 class Game:
 	def __init__(self, dim=3):
 		self.dim = dim
-		self.board = [[0 for i in range(self.dim*self.dim)] for j in range(self.dim*self.dim)]
-		self.miniWins = [[0 for i in range(self.dim)] for j in range(self.dim)]
+		self.board = np.zeros((self.dim**2, self.dim**2))
+		self.miniWins = np.zeros((self.dim, self.dim))
 		self.currPlayer = -1 + 2*random.randint(0,1)
 		self.validMoves = [(x,y) for x in range(self.dim*self.dim) for y in range(self.dim*self.dim)]
 		self.winner = 0
@@ -23,7 +24,7 @@ class Game:
 		return self.board
 
 	def isEnd(self):
-		return self.winner != 0
+		return self.winner != 0 or not self.validMoves
 
 	def getWinner(self):
 		return self.winner
@@ -51,7 +52,7 @@ class Game:
 			strrow2 = ''
 			for j in range(self.dim):
 				strrow2 = strrow2 + strrow[2*self.dim*j : 2*self.dim*(j+1)] + ' '
-			print strrow2
+			print(strrow2)
 			if (i + 1) % self.dim == 0:
 				print
 
@@ -77,8 +78,8 @@ class Game:
 
 	# Updates the grid specifying which mini-boards have been won by which players
 	def updateMiniWinners(self,pos):
-		r0 = pos[0]/self.dim
-		c0 = pos[1]/self.dim
+		r0 = pos[0]//self.dim
+		c0 = pos[1]//self.dim
 		if self.miniWins[r0][c0] == 0:
 			for dr in range(self.dim):
 				if self.board[self.dim*r0 + dr][self.dim*c0] != 0:
