@@ -20,25 +20,28 @@ class DQNagent:
 	def _build_model(self):
 		# Neural Net for Deep-Q learning Model
 		model = Sequential()
-		model.add(layers.Conv2D(24, (3,3), activation='relu', input_shape=self.state_size))
+		model.add(layers.Conv2D(24, (3,3), activation='relu', 
+					strides=(3,3), input_shape=self.state_size))
 		model.add(layers.Flatten())
-		model.add(Dense(24, activation='relu'))
+		# model.add(Dense(60, activation='relu'))
+		model.add(Dense(16, activation='relu'))
 		model.add(Dense(1, activation='tanh'))
 		model.compile(loss='binary_crossentropy',
 		              optimizer='rmsprop')
+		model.summary()
 		return model
 
 	def remember(self, state, next_state, winner):
 		self.memory.append((state, next_state, winner))
 
-	def act(self, game):
+	def getAction(self, game):
 		moves = game.getMoves()
 		if np.random.rand() <= self.epsilon:
 			i = random.randint(0,len(moves)-1)
 			return moves[i]
 		q = []
 		for action in moves:
-			board = game.getBoard()
+			board = np.array(game.getBoard())
 			board[action] = game.getCurrPlayer()
 			board = board.reshape((1, self.state_size[0], self.state_size[1], self.state_size[2]))
 			q.append((self.model.predict(board) * game.getCurrPlayer(), action))
