@@ -104,10 +104,12 @@ class Game:
 	# Utiliy method called by updateMiniWinners and updateWinner
 	# Checks a self.dim by self.dim board to find a winning pattern
 	def hasWinningPattern(self, board):
+		# Check row totals
 		for dr in range(self.dim):
 			rowTotal = sum(board[dr, i] for i in range(self.dim))
 			if abs(rowTotal) == self.dim:
 				return True
+				
 		# Check column totals
 		for dc in range(self.dim):
 			colTotal = sum(board[i, dc] for i in range(self.dim))
