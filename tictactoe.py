@@ -59,6 +59,7 @@ class Game:
 			if (i + 1) % self.dim == 0:
 				print
 
+	# Have current player move to position pos specified by a pair (row, col)
 	def move(self,pos):
 		if not pos in self.validMoves:
 			raise Exception("Invalid Move")
@@ -68,6 +69,8 @@ class Game:
 		self.updateValidMoves(pos)
 		self.currPlayer = -self.currPlayer
 
+	# Utility method called by the move method after each move to 
+	# set the valid moves for the next player
 	def updateValidMoves(self,pos):
 		self.validMoves = []
 		r0 = pos[0] % self.dim
@@ -79,6 +82,7 @@ class Game:
 				if self.board[r][c] == 0:
 					self.validMoves.append((r,c))
 
+	# Utility method called by move method
 	# Updates the grid specifying which mini-boards have been won by which players
 	def updateMiniWinners(self,pos):
 		r0 = pos[0]//self.dim
@@ -91,10 +95,13 @@ class Game:
 		if self.miniWins[r0][c0] == 0 and self.hasWinningPattern(miniBoard):
 			self.miniWins[r0][c0] = self.currPlayer
 
+	# Utility method called by move method
+	# Updates the winner by examining the miniWins board
 	def updateWinner(self):
 		if self.winner == 0 and self.hasWinningPattern(self.miniWins):
 			self.winner = self.currPlayer
 
+	# Utiliy method called by updateMiniWinners and updateWinner
 	# Checks a self.dim by self.dim board to find a winning pattern
 	def hasWinningPattern(self, board):
 		for dr in range(self.dim):
