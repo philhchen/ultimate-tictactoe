@@ -14,6 +14,9 @@ class Game:
 	def getMoves(self):
 		return self.validMoves
 
+	def getRandomMove(self):
+		return random.choice(self.validMoves)
+
 	def getCurrPlayer(self):
 		return self.currPlayer
 
@@ -80,66 +83,37 @@ class Game:
 	def updateMiniWinners(self,pos):
 		r0 = pos[0]//self.dim
 		c0 = pos[1]//self.dim
-		if self.miniWins[r0][c0] == 0:
-			for dr in range(self.dim):
-				if self.board[self.dim*r0 + dr][self.dim*c0] != 0:
-					success = True
-					for dc in range(self.dim):
-						success = success and self.board[self.dim*r0 + dr][self.dim*c0] == self.board[self.dim*r0 + dr][self.dim*c0 + dc]
-					if success:
-						self.miniWins[r0][c0] = self.currPlayer
-						return
-			for dc in range(self.dim):
-				if self.board[self.dim*r0][self.dim*c0 + dc] != 0:
-					success = True
-					for dr in range(self.dim):
-						success = success and self.board[self.dim*r0][self.dim*c0 + dc] == self.board[self.dim*r0 + dr][self.dim*c0 + dc]
-					if success:
-						self.miniWins[r0][c0] = self.currPlayer
-						return
-			if self.board[self.dim*r0][self.dim*c0] != 0:
-				success = True
-				for drdc in range(self.dim):
-					success = success and self.board[self.dim*r0][self.dim*c0] == self.board[self.dim*r0 + drdc][self.dim*c0 + drdc]
-				if success:
-					self.miniWins[r0][c0] = self.currPlayer
-					return
-			if self.board[self.dim*(r0 + 1) - 1][self.dim*c0] != 0:
-				success = True
-				for dc in range(1, self.dim):
-					success = success and self.board[self.dim*(r0 + 1) - 1][self.dim*c0] == self.board[self.dim*(r0 + 1) - 1 - dc][self.dim*c0 + dc]
-				if success:
-					self.miniWins[r0][c0] = self.currPlayer
-					return
+
+		row = r0 * self.dim
+		col = c0 * self.dim
+
+		miniBoard = self.board[row : row + self.dim, col : col + self.dim]
+		if self.miniWins[r0][c0] == 0 and self.hasWinningPattern(miniBoard):
+			self.miniWins[r0][c0] = self.currPlayer
 
 	def updateWinner(self):
-		if self.winner == 0:
-			for r in range(self.dim):
-				success = self.miniWins[r][0] != 0
-				for c in range(1, self.dim):
-					success = success and self.miniWins[r][0] == self.miniWins[r][c]
-				if success:
-					self.winner = self.miniWins[r][0]
-					return
+		if self.winner == 0 and self.hasWinningPattern(self.miniWins):
+			self.winner = self.currPlayer
 
-			for c in range(self.dim):
-				success = self.miniWins[0][c] != 0
-				for r in range(1, self.dim):
-					success = success and self.miniWins[0][c] == self.miniWins[r][c]
-				if success:
-					self.winner = self.miniWins[0][c]
-					return
+	# Checks a self.dim by self.dim board to find a winning pattern
+	def hasWinningPattern(self, board):
+		for dr in range(self.dim):
+			rowTotal = sum(board[dr, i] for i in range(self.dim))
+			if abs(rowTotal) == self.dim:
+				return True
+		# Check column totals
+		for dc in range(self.dim):
+			colTotal = sum(board[i, dc] for i in range(self.dim))
+			if abs(colTotal) == self.dim:
+				return True
 
-			success = self.miniWins[0][0] != 0
-			for rc in range(1, self.dim):
-				success = success and self.miniWins[0][0] == self.miniWins[rc][rc]
-			if success:
-				self.winner = self.miniWins[0][0]
-				return
-
-			success = self.miniWins[self.dim - 1][0] != 0
-			for c in range(1, self.dim):
-				success = success and self.miniWins[self.dim - 1][0] == self.miniWins[self.dim - 1 - c][c]
-			if success:
-				self.winner = self.miniWins[self.dim - 1][0]
+		# Check diagonal totals
+		diagTotal = sum(board[i, i] for i in range(self.dim))
+		if abs(diagTotal) == self.dim:
+			return True
+		
+		diagTotal = sum(board[self.dim - 1 - i, i] for i in range(self.dim))
+		if abs(diagTotal) == self.dim:
+			return True
+		return False
 
