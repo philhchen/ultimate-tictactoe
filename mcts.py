@@ -10,7 +10,7 @@ class Node:
 		self.visits = 0
 		self.state = state
 		self.agent = agent
-		self.untriedMoves = self.orderMoves(state.getMoves())
+		self.untriedMoves = copy.deepcopy(state.getMoves())
 
 	def __repr__(self):
 		return "[M:" + str(self.move) + "W/V:" + str(self.wins) + "/" + str(self.visits) + "]"
@@ -22,7 +22,7 @@ class Node:
 	def AddChild(self, m):
 		newState = self.state.generateSuccessor(m)
 		n = Node(move=m, parent=self, state=newState, agent=self.agent)
-		self.untriedMoves.pop(m)
+		self.untriedMoves.remove(m)
 		self.childNodes.append(n)
 		return n
 
@@ -36,7 +36,7 @@ class Node:
 		moveDict = collections.defaultdict(float)
 		for move in moves:
 			newState = self.state.generateSuccessor(move)
-			val = -self.agent.getVal(newState) if self.agent != None else 1
+			val = 1 - self.agent.getVal(newState) if self.agent != None else 1
 			moveDict[move] = val
 		return moveDict
 
@@ -59,28 +59,32 @@ class MCTSagent:
 			state = copy.deepcopy(game)
 
 			# Select
-			while node.untriedMoves == {} and node.childNodes != []:
+			while node.untriedMoves == [] and node.childNodes != []:
 				node = node.UCTSelectChild()
 				state.move(node.move)
 
 			# Expand
-			if node.untriedMoves != {}:
-				m = util.weightedRandomChoice(node.untriedMoves)
+			if node.untriedMoves != []:
+				m = random.choice(node.untriedMoves)
 				state.move(m)
 				node = node.AddChild(m)
 
 			# Rollout
-			while not state.isEnd():
-				state.move(state.getRandomMove())
-
-			# Backpropogate
-			while node != None:
+			if self.agent == None:
+				while not state.isEnd():
+					state.move(state.getRandomMove())
 				if state.getWinner() == game.getCurrPlayer():
 					result = 1
 				elif state.getWinner() == 0:
 					result = 0.5
 				else:
 					result = 0
+			else:
+				result = game.getCurrPlayer() * state.getCurrPlayer() * self.agent.getVal(state)
+				result = (1 + result)/2 # Normalize from [-1 1] to [0 1]
+
+			# Backpropogate
+			while node != None:
 				node.Update(result)
 				node = node.parentNode
 		return sorted(rootnode.childNodes, key = lambda c: c.visits)[-1].move

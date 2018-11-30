@@ -12,20 +12,26 @@ class DQNagent:
 		self.gamma = 0.95    # discount rate
 		self.epsilon = 1.0  # exploration rate
 		self.epsilon_min = 0.01
-		self.epsilon_decay = 0.9999
+		self.epsilon_decay = 0.995
 		self.learning_rate = 0.0001
 		self.model = self._build_model()
+		self.history = None
 
 	def _build_model(self):
 		# Neural Net for Deep-Q learning Model
 		board_input = layers.Input(shape=self.state_size, name='board')
-		board_cnn = layers.Conv2D(24, (3,3), activation='relu', strides=(3,3)) (board_input)
+
+		board_cnn = layers.Conv2D(64, (3,3), activation='relu', strides=(3,3)) (board_input)
+		board_cnn = layers.Dropout(0.2)(board_cnn)
+
 		dense_0 = layers.Flatten()(board_cnn)
 
 		dense_1 = layers.Dense(16, activation='relu')(dense_0)
-		probabilit = layers.Dense(1, activation='tanh')(dense_1)
+		dense_1 = layers.Dropout(0.2)(dense_1)
+
+		probability = layers.Dense(1, activation='tanh')(dense_1)
 		model = Model(board_input, probability)
-		model.compile(loss='binary_crossentropy', optimizer='rmsprop')
+		model.compile(loss='mean_squared_error', optimizer='rmsprop')
 		model.summary()
 		return model
 
@@ -70,11 +76,21 @@ class DQNagent:
 			policy[moves[i]] = val/sumVals
 		return policy
 
-	def replay(self, batch_size):
+	def replay(self, batch_size, verbose=False):
 		minibatch = random.sample(self.memory, batch_size)
-		for state, next_state, winner in minibatch:
-			target = [[winner]] if winner != 0 else self.gamma * self.model.predict(next_state)
-			self.model.fit(state, target, epochs=1, verbose=0)
+		states = np.zeros((batch_size, self.state_size[0], self.state_size[1], self.state_size[2]))
+		targets = np.zeros((batch_size, 1))
+
+		for i, (state, next_state, weight) in enumerate(minibatch):
+			states[i] = state
+			targets[i] = [weight]
+		
+		self.history = self.model.fit(states, targets, epochs=1, verbose=0)
+
+		if verbose:
+			print('Loss:', self.history.history['loss'][0])
+			print(targets[5], self.model.predict([[states[5]]]))
+
 		if self.epsilon > self.epsilon_min:
 			self.epsilon *= self.epsilon_decay
 

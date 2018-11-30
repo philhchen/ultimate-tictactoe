@@ -9,10 +9,14 @@ class Game:
 		self.miniWins = np.zeros((self.dim, self.dim))
 		self.currPlayer = -1 + 2*random.randint(0,1)
 		self.validMoves = [(x,y) for x in range(self.dim*self.dim) for y in range(self.dim*self.dim)]
+		self.numMoves = 0
 		self.winner = 0
 
 	def getMoves(self):
 		return self.validMoves
+
+	def getNumMoves(self):
+		return self.numMoves
 
 	def getRandomMove(self):
 		return random.choice(self.validMoves)
@@ -68,11 +72,14 @@ class Game:
 		self.updateWinner()
 		self.updateValidMoves(pos)
 		self.currPlayer = -self.currPlayer
+		self.numMoves += 1
 
 	# Utility method called by the move method after each move to 
 	# set the valid moves for the next player
 	def updateValidMoves(self,pos):
 		self.validMoves = []
+
+		# First look at all the squares in the current mini-board
 		r0 = pos[0] % self.dim
 		c0 = pos[1] % self.dim
 		for dr in range(self.dim):
@@ -81,6 +88,14 @@ class Game:
 				c = self.dim*c0 + dc
 				if self.board[r][c] == 0:
 					self.validMoves.append((r,c))
+
+		# If all squares in the current mini-board are taken, pick any open grid
+		# on the screen
+		if self.validMoves == []:
+			for r in range(self.dim**2):
+				for c in range(self.dim**2):
+					if self.board[r][c] == 0:
+						self.validMoves.append((r,c))
 
 	# Utility method called by move method
 	# Updates the grid specifying which mini-boards have been won by which players
